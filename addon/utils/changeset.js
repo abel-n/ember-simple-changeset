@@ -17,4 +17,8 @@ export default class Changeset {
   applyChanges() {
     Object.entries(this._changes).forEach(([key, value]) => this._model.set(key, value));
   }
+
+  revertChanges() {
+    this._changes = {};
+  }
 }

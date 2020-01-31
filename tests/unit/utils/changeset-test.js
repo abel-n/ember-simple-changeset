@@ -28,4 +28,11 @@ module('Unit | Utility | changeset', function(hooks) {
     assert.equal(this.changeset.get('name'), 'Lilian');
     assert.equal(this.model.name, 'Lilian');
   });
+
+  test('it reverts changes', function(assert) {
+    this.changeset.set('name', 'Lilian');
+    this.changeset.revertChanges();
+
+    assert.equal(this.changeset.get('name'), 'Jonathan');
+  });
 });
