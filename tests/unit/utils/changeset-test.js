@@ -34,6 +34,8 @@ module('Unit | Utility | changeset', function(hooks) {
   });
 
   test('it applies changes', function(assert) {
+    assert.expect(4);
+
     this.changeset.set('firstName', 'Lilian');
     assert.equal(this.changeset.get('firstName'), 'Lilian');
     assert.equal(this.model.firstName, 'Jonathan');
@@ -44,6 +46,8 @@ module('Unit | Utility | changeset', function(hooks) {
   });
 
   test('it reverts changes', function(assert) {
+    assert.expect(1);
+
     this.changeset.set('firstName', 'Lilian');
     this.changeset.revertChanges();
 
@@ -51,6 +55,8 @@ module('Unit | Utility | changeset', function(hooks) {
   });
 
   test('it handles computed properties', function(assert) {
+    assert.expect(6);
+
     this.changeset.set('fullName', 'Lilian Baxter');
 
     assert.equal(this.changeset.get('firstName'), 'Lilian');
