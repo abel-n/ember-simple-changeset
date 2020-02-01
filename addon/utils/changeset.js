@@ -1,5 +1,6 @@
 import { set } from '@ember/object';
 import { A } from '@ember/array';
+import { getOwner } from '@ember/application';
 import HasManyChange from 'ember-simple-changeset/utils/has-many-change';
 
 // function hasManysAreEqual(array1, array2) {
@@ -16,13 +17,13 @@ export default class Changeset {
   constructor(model) {
     this._model = model;
 
-    model.eachAttribute((key) => this.modelAttributes.pushObject(key));
+    model.eachAttribute((key, { type }) => this.modelAttributes.pushObject({ key, type }));
     model.eachRelationship((key, { kind }) => this.modelRelationships.pushObject({ key, kind }));
     this._resetHasManyRelations();
   }
 
   get(key) {
-    if (!this._isRelation(key)) {
+    if (!this._findRelation(key)) {
       const getter = this._getAccessorFor(key, 'get');
 
       if (getter) {
@@ -34,8 +35,10 @@ export default class Changeset {
   }
 
   set(key, value) {
-    if (this._isRelation(key)) {
-      const transformedValue = this._transformIfHasManyObject(key, value);
+    const relation = this._findRelation(key);
+
+    if (relation) {
+      const transformedValue = this._transformRelation(relation, value);
       set(this._changes, key, transformedValue);
       return value;
     }
@@ -77,11 +80,15 @@ export default class Changeset {
     });
   }
 
-  _isRelation(key) {
-    return this.modelAttributes.includes(key) || this._findRelation(key);
+  _findRelation(key) {
+    return this._findAttr(key) || this._findRelationship(key);
   }
 
-  _findRelation(key, kind) {
+  _findAttr(key) {
+    return this.modelAttributes.findBy('key', key);
+  }
+
+  _findRelationship(key, kind) {
     const relations = kind ? A(this.modelRelationships.filterBy('kind', kind)) : this.modelRelationships;
     return relations.findBy('key', key);
   }
@@ -91,11 +98,17 @@ export default class Changeset {
     return descriptor && descriptor[type];
   }
 
-  _transformIfHasManyObject(key, value) {
-    const hasMany = this._findRelation(key, 'hasMany');
+  _transformRelation(relation, value) { // eslint-disable-line class-methods-use-this
+    const isHasMany = relation.kind && relation.kind === 'hasMany';
+    const transformType = relation.type;
 
-    if (hasMany && typeof value === 'object') {
+    if (isHasMany && typeof value === 'object') {
       return [value];
+    }
+
+    if (transformType) {
+      const transform = getOwner(this._model).lookup(`transform:${transformType}`);
+      return transform.serialize(value);
     }
 
     return value;

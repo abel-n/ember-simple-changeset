@@ -1,4 +1,4 @@
-import { module, test/* , todo */ } from 'qunit';
+import { module, test } from 'qunit';
 import { setupTest } from 'ember-qunit';
 import Changeset from 'dummy/utils/changeset';
 import Model, { attr, belongsTo, hasMany } from '@ember-data/model';
@@ -8,6 +8,11 @@ import { A } from '@ember/array';
 class TestModel extends Model {
   @attr() firstName
   @attr() lastName
+  @attr() lastName
+  @attr() notes
+  @attr('boolean') isMath
+  @attr('number') children
+  @attr('date') birthDate
 
   @belongsTo('test', { inverse: 'followers' }) follows
   @hasMany('test', { inverse: 'follows' }) followers
@@ -38,20 +43,38 @@ module('Unit | Utility | changeset', (hooks) => {
     this.changeset = new Changeset(this.model);
   });
 
-  test('it applies changes', function(assert) {
-    assert.expect(5);
+  test('it serializes attributes and applies appropriate changes on model', function(assert) {
+    assert.expect(12);
+
+    const expected = {
+      firstName: 'Lilian',
+      notAProperty: undefined,
+      children: 2,
+      notes: '123',
+      isMath: true,
+    };
+
+    const assertProps = (obj) => {
+      ['firstName', 'notAProperty', 'children', 'notes', 'isMath'].forEach((prop) => {
+        assert.equal(obj.get(prop), expected[prop], `${prop} equals ${expected[prop]}`);
+      });
+    };
 
     this.changeset.setProperties({
-      firstName: 'Lilian',
+      firstName: expected.firstName,
       notAProperty: 'someValue',
+      children: '2',
+      notes: 123,
+      isMath: 'not boolean',
     });
-    assert.equal(this.changeset.get('firstName'), 'Lilian');
+
+    assertProps(this.changeset);
     assert.equal(this.model.firstName, 'Jonathan', 'model attr is unchanged before application');
 
     this.changeset.applyChanges();
+
     assert.equal(this.changeset.get('firstName'), 'Lilian');
-    assert.equal(this.model.firstName, 'Lilian', 'model attr is changed after application');
-    assert.notOk(this.model.notAProperty, 'only tracks model attrs and relations');
+    assertProps(this.model);
   });
 
   test('it reverts changes', function(assert) {
