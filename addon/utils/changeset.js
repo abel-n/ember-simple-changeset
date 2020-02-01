@@ -35,7 +35,8 @@ export default class Changeset {
 
   set(key, value) {
     if (this._isRelation(key)) {
-      set(this._changes, key, value);
+      const transformedValue = this._transformIfHasManyObject(key, value);
+      set(this._changes, key, transformedValue);
       return value;
     }
 
@@ -79,5 +80,15 @@ export default class Changeset {
   _getAccessorFor(key, type) {
     const descriptor = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(this._model), key);
     return descriptor && descriptor[type];
+  }
+
+  _transformIfHasManyObject(key, value) {
+    const hasMany = this._findRelation(key, 'hasMany');
+
+    if (hasMany && typeof value === 'object') {
+      return [value];
+    }
+
+    return value;
   }
 }

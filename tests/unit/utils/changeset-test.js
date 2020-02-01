@@ -90,41 +90,63 @@ module('Unit | Utility | changeset', (hooks) => {
     assert.equal(this.model.follows.content, follows);
   });
 
-  test('it handles hasMany relationships', function(assert) {
-    assert.expect(10);
-
-    const followers = A(new Array(3).fill().map((_v, index) => this.store.createRecord('test', { id: Number(index) + 1 })));
-    const model = this.store.createRecord('test', {
-      firstName: 'Jonathan',
-      lastName: 'Palmer',
-      followers,
+  module('hasMany', (hasManyHooks) => {
+    hasManyHooks.beforeEach(function() {
+      this.followers = A(new Array(3).fill().map((_v, index) => this.store.createRecord('test', { id: Number(index) + 1 })));
+      this.model = this.store.createRecord('test', {
+        firstName: 'Jonathan',
+        lastName: 'Palmer',
+        followers: this.followers,
+      });
+      this.changeset = new Changeset(this.model);
+      this.getFollowers = () => this.changeset.get('followers');
     });
-    const changeset = new Changeset(model);
-    const getFollowers = () => changeset.get('followers');
 
-    assert.equal(model.followers.content.length, 3);
-    assert.deepEqual(getFollowers().mapBy('id'), followers.mapBy('id'), 'returns the initial hasMany');
+    test('it reacts with model as expected', function(assert) {
+      assert.expect(10);
 
-    model.followers.removeObject(model.followers.lastObject);
-    assert.equal(model.followers.content.length, 2);
-    assert.deepEqual(getFollowers().mapBy('id'), model.followers.mapBy('id'), 'reflects changes in the underlying model when not changed yet');
+      const {
+        changeset,
+        followers,
+        getFollowers,
+        model,
+      } = this;
 
-    getFollowers().removeObject(getFollowers().lastObject);
-    assert.equal(model.followers.content.length, 2, 'underlying model doesn\'t change when changeset field is mutated');
-    assert.equal(getFollowers().length, 1);
+      assert.equal(model.followers.content.length, 3);
+      assert.deepEqual(getFollowers().mapBy('id'), followers.mapBy('id'), 'returns the initial hasMany');
 
-    changeset.rollbackAttributes();
-    assert.equal(model.followers.content.length, 2);
-    assert.equal(getFollowers().length, 2, 'on rollback changeset reflects the actual state of the model array');
+      model.followers.removeObject(model.followers.lastObject);
+      assert.equal(model.followers.content.length, 2);
+      assert.deepEqual(getFollowers().mapBy('id'), model.followers.mapBy('id'), 'reflects changes in the underlying model when not changed yet');
 
-    getFollowers().removeObject(getFollowers().lastObject);
-    changeset.applyChanges();
+      getFollowers().removeObject(getFollowers().lastObject);
+      assert.equal(model.followers.content.length, 2, 'underlying model doesn\'t change when changeset field is mutated');
+      assert.equal(getFollowers().length, 1);
 
-    const changesetFollowers = changeset.get('followers').toArray();
-    const modelFollowers = model.followers.toArray();
-    const expected = [followers.firstObject];
+      changeset.rollbackAttributes();
+      assert.equal(model.followers.content.length, 2);
+      assert.equal(getFollowers().length, 2, 'on rollback changeset reflects the actual state of the model');
 
-    assert.deepEqual(changesetFollowers, expected);
-    assert.deepEqual(modelFollowers, expected, 'changes from changeset are applied to model');
+      getFollowers().removeObject(getFollowers().lastObject);
+      changeset.applyChanges();
+
+      const changesetFollowers = changeset.get('followers').toArray();
+      const modelFollowers = model.followers.toArray();
+      const expected = [followers.firstObject];
+
+      assert.deepEqual(changesetFollowers, expected);
+      assert.deepEqual(modelFollowers, expected, 'changes from changeset are applied to model');
+    });
+
+    test('setting it as an object wraps that object in an array', function(assert) {
+      assert.expect(2);
+
+      assert.equal(this.getFollowers().length, 3);
+
+      const follower = this.store.createRecord('test');
+      this.changeset.set('followers', follower);
+
+      assert.deepEqual(this.getFollowers(), [follower]);
+    });
   });
 });
