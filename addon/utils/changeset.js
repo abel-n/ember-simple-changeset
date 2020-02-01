@@ -49,6 +49,15 @@ export default class Changeset {
     return value;
   }
 
+  setProperties(hash) {
+    if (hash === null || typeof hash !== 'object') {
+      return hash;
+    }
+
+    Object.entries(hash).forEach(([key, value]) => this.set(key, value));
+    return hash;
+  }
+
   applyChanges() {
     Object.entries(this._changes).forEach(([key, value]) => this._model.set(key, value));
   }

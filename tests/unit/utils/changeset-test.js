@@ -41,8 +41,10 @@ module('Unit | Utility | changeset', (hooks) => {
   test('it applies changes', function(assert) {
     assert.expect(5);
 
-    this.changeset.set('firstName', 'Lilian');
-    this.changeset.set('notAProperty', 'someValue');
+    this.changeset.setProperties({
+      firstName: 'Lilian',
+      notAProperty: 'someValue',
+    });
     assert.equal(this.changeset.get('firstName'), 'Lilian');
     assert.equal(this.model.firstName, 'Jonathan', 'model attr is unchanged before application');
 
