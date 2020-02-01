@@ -1,12 +1,15 @@
-import { module, test } from 'qunit';
+import { module, test/*, todo*/ } from 'qunit';
 import { setupTest } from 'ember-qunit';
 import Changeset from 'dummy/utils/changeset';
-import Model, { attr/*, belongsTo, hasMany*/ } from '@ember-data/model';
+import Model, { attr, belongsTo, hasMany } from '@ember-data/model';
 import { computed, setProperties } from '@ember/object';
 
 class TestModel extends Model {
   @attr() firstName
   @attr() lastName
+
+  @belongsTo('test', { inverse: 'followers' }) follows
+  @hasMany('test', { inverse: 'follows' }) followers
 
   @computed('firstName', 'lastName')
   get fullName() {
@@ -26,7 +29,8 @@ module('Unit | Utility | changeset', function(hooks) {
   hooks.beforeEach(function() {
     this.owner.register('model:test', TestModel);
 
-    this.model = this.owner.lookup('service:store').createRecord('test', {
+    this.store = this.owner.lookup('service:store');
+    this.model = this.store.createRecord('test', {
       firstName: 'Jonathan',
       lastName: 'Palmer'
     });
@@ -69,5 +73,19 @@ module('Unit | Utility | changeset', function(hooks) {
     this.changeset.applyChanges();
     assert.equal(this.changeset.get('fullName'), 'Flora Baxter');
     assert.equal(this.model.fullName, 'Flora Baxter');
+  });
+
+  test('it handles belongsTo relationships', function(assert) {
+    assert.expect(4);
+
+    let follows = this.store.createRecord('test');
+
+    this.changeset.set('follows', follows);
+    assert.equal(this.changeset.get('follows'), follows);
+    assert.notOk(this.model.follows.content);
+
+    this.changeset.applyChanges();
+    assert.equal(this.changeset.get('follows'), follows);
+    assert.equal(this.model.follows.content, follows);
   });
 });

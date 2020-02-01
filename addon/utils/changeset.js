@@ -21,7 +21,7 @@ export default class Changeset {
       }
     }
 
-    return this._changes[key] || this._model[key];
+    return this._changes[key] || this._model.get(key);
   }
 
   set(key, value) {
