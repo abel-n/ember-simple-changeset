@@ -1,5 +1,12 @@
 import { set } from '@ember/object';
 import { A } from '@ember/array';
+import HasManyChange from 'ember-simple-changeset/utils/has-many-change';
+
+// function hasManysAreEqual(array1, array2) {
+//   return (array1.length === array2.length) && array1.every((item, index) => (
+//     item === array2.objectAt ? array2.objectAt(index) : array2[index]
+//   ));
+// }
 
 export default class Changeset {
   _changes = {}
@@ -53,18 +60,20 @@ export default class Changeset {
   _resetHasManyRelations() {
     const model = this._model;
     model.eachRelationship((key, { kind }) => {
-      if (kind === 'hasMany' && model[key].length) {
-        set(this._changes, key, model[key].toArray());
+      if (kind === 'hasMany') {
+        const hasManyChange = HasManyChange.create({ content: model[key] });
+        set(this._changes, key, hasManyChange);
       }
     });
   }
 
   _isRelation(key) {
-    return this.modelAttributes.includes(key) || this._findHasManyRelation(key);
+    return this.modelAttributes.includes(key) || this._findRelation(key);
   }
 
-  _findHasManyRelation(key) {
-    return this.modelRelationships.findBy('key', key);
+  _findRelation(key, kind) {
+    const relations = kind ? A(this.modelRelationships.filterBy('kind', kind)) : this.modelRelationships;
+    return relations.findBy('key', key);
   }
 
   _getAccessorFor(key, type) {

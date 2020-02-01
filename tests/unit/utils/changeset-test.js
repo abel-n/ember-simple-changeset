@@ -91,7 +91,7 @@ module('Unit | Utility | changeset', (hooks) => {
   });
 
   test('it handles hasMany relationships', function(assert) {
-    assert.expect(8);
+    assert.expect(10);
 
     const followers = A(new Array(3).fill().map((_v, index) => this.store.createRecord('test', { id: Number(index) + 1 })));
     const model = this.store.createRecord('test', {
@@ -103,20 +103,28 @@ module('Unit | Utility | changeset', (hooks) => {
     const getFollowers = () => changeset.get('followers');
 
     assert.equal(model.followers.content.length, 3);
-    assert.deepEqual(getFollowers().mapBy('id'), followers.mapBy('id'));
+    assert.deepEqual(getFollowers().mapBy('id'), followers.mapBy('id'), 'returns the initial hasMany');
+
+    model.followers.removeObject(model.followers.lastObject);
+    assert.equal(model.followers.content.length, 2);
+    assert.deepEqual(getFollowers().mapBy('id'), model.followers.mapBy('id'), 'reflects changes in the underlying model when not changed yet');
 
     getFollowers().removeObject(getFollowers().lastObject);
-    assert.equal(model.followers.content.length, 3);
-    assert.equal(getFollowers().length, 2);
+    assert.equal(model.followers.content.length, 2, 'underlying model doesn\'t change when changeset field is mutated');
+    assert.equal(getFollowers().length, 1);
 
     changeset.rollbackAttributes();
-    assert.equal(model.followers.content.length, 3);
-    assert.equal(getFollowers().length, 3);
+    assert.equal(model.followers.content.length, 2);
+    assert.equal(getFollowers().length, 2, 'on rollback changeset reflects the actual state of the model array');
 
     getFollowers().removeObject(getFollowers().lastObject);
     changeset.applyChanges();
-    followers.pop();
-    assert.deepEqual(changeset.get('followers'), followers);
-    assert.deepEqual(model.followers.toArray(), followers);
+
+    const changesetFollowers = changeset.get('followers').toArray();
+    const modelFollowers = model.followers.toArray();
+    const expected = [followers.firstObject];
+
+    assert.deepEqual(changesetFollowers, expected);
+    assert.deepEqual(modelFollowers, expected, 'changes from changeset are applied to model');
   });
 });
