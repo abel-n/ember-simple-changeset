@@ -1,5 +1,9 @@
+/* eslint-disable strict */
+
 'use strict';
 
+const thisPackage = require('./package');
+
 module.exports = {
-  name: require('./package').name
+  name: thisPackage.name,
 };

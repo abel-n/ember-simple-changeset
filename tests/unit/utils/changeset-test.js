@@ -1,4 +1,4 @@
-import { module, test/*, todo*/ } from 'qunit';
+import { module, test/* , todo */ } from 'qunit';
 import { setupTest } from 'ember-qunit';
 import Changeset from 'dummy/utils/changeset';
 import Model, { attr, belongsTo, hasMany } from '@ember-data/model';
@@ -18,13 +18,13 @@ class TestModel extends Model {
   }
 
   set fullName(value) {
-    let [firstName, lastName] = (value || '').split(' ');
+    const [firstName, lastName] = (value || '').split(' ');
     setProperties(this, { firstName, lastName });
     return value;
   }
 }
 
-module('Unit | Utility | changeset', function(hooks) {
+module('Unit | Utility | changeset', (hooks) => {
   setupTest(hooks);
 
   hooks.beforeEach(function() {
@@ -33,7 +33,7 @@ module('Unit | Utility | changeset', function(hooks) {
     this.store = this.owner.lookup('service:store');
     this.model = this.store.createRecord('test', {
       firstName: 'Jonathan',
-      lastName: 'Palmer'
+      lastName: 'Palmer',
     });
     this.changeset = new Changeset(this.model);
   });
@@ -79,7 +79,7 @@ module('Unit | Utility | changeset', function(hooks) {
   test('it handles belongsTo relationships', function(assert) {
     assert.expect(4);
 
-    let follows = this.store.createRecord('test');
+    const follows = this.store.createRecord('test');
 
     this.changeset.set('follows', follows);
     assert.equal(this.changeset.get('follows'), follows);
@@ -93,14 +93,14 @@ module('Unit | Utility | changeset', function(hooks) {
   test('it handles hasMany relationships', function(assert) {
     assert.expect(8);
 
-    let followers = A(new Array(3).fill().map((_v, index) => this.store.createRecord('test', { id: Number(index) + 1 })));
-    let model = this.store.createRecord('test', {
+    const followers = A(new Array(3).fill().map((_v, index) => this.store.createRecord('test', { id: Number(index) + 1 })));
+    const model = this.store.createRecord('test', {
       firstName: 'Jonathan',
       lastName: 'Palmer',
-      followers
+      followers,
     });
-    let changeset = new Changeset(model);
-    let getFollowers = () => changeset.get('followers');
+    const changeset = new Changeset(model);
+    const getFollowers = () => changeset.get('followers');
 
     assert.equal(model.followers.content.length, 3);
     assert.deepEqual(getFollowers().mapBy('id'), followers.mapBy('id'));

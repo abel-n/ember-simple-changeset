@@ -16,7 +16,7 @@ export default class Changeset {
 
   get(key) {
     if (!this._isRelation(key)) {
-      let getter = this._getAccessorFor(key, 'get');
+      const getter = this._getAccessorFor(key, 'get');
 
       if (getter) {
         return getter.call(this._changes);
@@ -32,12 +32,13 @@ export default class Changeset {
       return value;
     }
 
-    let setter = this._getAccessorFor(key, 'set');
+    const setter = this._getAccessorFor(key, 'set');
 
     if (setter) {
       setter.call(this._changes, value);
-      return value;
     }
+
+    return value;
   }
 
   applyChanges() {
@@ -50,7 +51,7 @@ export default class Changeset {
   }
 
   _resetHasManyRelations() {
-    let model = this._model;
+    const model = this._model;
     model.eachRelationship((key, { kind }) => {
       if (kind === 'hasMany' && model[key].length) {
         set(this._changes, key, model[key].toArray());
@@ -67,7 +68,7 @@ export default class Changeset {
   }
 
   _getAccessorFor(key, type) {
-    let descriptor = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(this._model), key);
+    const descriptor = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(this._model), key);
     return descriptor && descriptor[type];
   }
 }

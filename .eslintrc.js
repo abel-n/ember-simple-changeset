@@ -1,3 +1,5 @@
+const eslintPluginNode = require('eslint-plugin-node');
+
 module.exports = {
   root: true,
   parser: 'babel-eslint',
@@ -5,21 +7,35 @@ module.exports = {
     ecmaVersion: 2018,
     sourceType: 'module',
     ecmaFeatures: {
-      legacyDecorators: true
-    }
+      legacyDecorators: true,
+    },
   },
   plugins: [
-    'ember'
+    'ember',
   ],
   extends: [
     'eslint:recommended',
-    'plugin:ember/recommended'
+    'plugin:ember/recommended',
+    'airbnb-base',
   ],
   env: {
-    browser: true
+    browser: true,
   },
   rules: {
-    'ember/no-jquery': 'error'
+    'ember/no-jquery': 'error',
+    'func-names': ['error', 'never'],
+    'space-before-function-paren': ['error', 'never'],
+    'import/no-unresolved': 'off',
+    'import/extensions': 'off',
+    'no-underscore-dangle': ['error', {
+      allowAfterThis: true,
+      allowAfterSuper: true,
+    }],
+    'lines-between-class-members': ['error', 'always', {
+      exceptAfterSingleLine: true,
+    }],
+    'import/no-extraneous-dependencies': 'off',
+    'prefer-arrow-callback': ['error', { allowUnboundThis: true }],
   },
   overrides: [
     // node files
@@ -32,25 +48,28 @@ module.exports = {
         'testem.js',
         'blueprints/*/index.js',
         'config/**/*.js',
-        'tests/dummy/config/**/*.js'
+        'tests/dummy/config/**/*.js',
       ],
       excludedFiles: [
         'addon/**',
         'addon-test-support/**',
         'app/**',
-        'tests/dummy/app/**'
+        'tests/dummy/app/**',
       ],
       parserOptions: {
-        sourceType: 'script'
+        sourceType: 'script',
       },
       env: {
         browser: false,
-        node: true
+        node: true,
       },
       plugins: ['node'],
-      rules: Object.assign({}, require('eslint-plugin-node').configs.recommended.rules, {
-        // add your custom rules and overrides for node files here
-      })
-    }
-  ]
+      rules: {
+        ...eslintPluginNode.configs.recommended.rules,
+        ...{
+          // add your custom rules and overrides for node files here
+        },
+      },
+    },
+  ],
 };
