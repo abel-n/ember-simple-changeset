@@ -39,15 +39,17 @@ module('Unit | Utility | changeset', (hooks) => {
   });
 
   test('it applies changes', function(assert) {
-    assert.expect(4);
+    assert.expect(5);
 
     this.changeset.set('firstName', 'Lilian');
+    this.changeset.set('notAProperty', 'someValue');
     assert.equal(this.changeset.get('firstName'), 'Lilian');
-    assert.equal(this.model.firstName, 'Jonathan');
+    assert.equal(this.model.firstName, 'Jonathan', 'model attr is unchanged before application');
 
     this.changeset.applyChanges();
     assert.equal(this.changeset.get('firstName'), 'Lilian');
-    assert.equal(this.model.firstName, 'Lilian');
+    assert.equal(this.model.firstName, 'Lilian', 'model attr is changed after application');
+    assert.notOk(this.model.notAProperty, 'only tracks model attrs and relations');
   });
 
   test('it reverts changes', function(assert) {
