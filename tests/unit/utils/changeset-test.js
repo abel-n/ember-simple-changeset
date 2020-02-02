@@ -4,6 +4,7 @@ import Changeset from 'dummy/utils/changeset';
 import Model, { attr, belongsTo, hasMany } from '@ember-data/model';
 import { computed, setProperties } from '@ember/object';
 import { A } from '@ember/array';
+import sinon from 'sinon';
 
 class TestModel extends Model {
   @attr() firstName
@@ -134,8 +135,20 @@ module('Unit | Utility | changeset', (hooks) => {
       assert.equal(this.changeset.get('follows'), follows);
       assert.equal(this.model.follows.content, follows);
     });
-  });
 
+    test('it calls model.save if not dirty', async function(assert) {
+      assert.expect(2);
+
+      const save = sinon.stub(this.model, 'save');
+
+      await this.changeset.save();
+      assert.ok(save.notCalled);
+
+      this.changeset.set('firstName', 'Po');
+      await this.changeset.save();
+      assert.ok(save.calledOnce);
+    });
+  });
 
   module('hasMany', (hasManyHooks) => {
     hasManyHooks.beforeEach(function() {

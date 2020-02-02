@@ -7,6 +7,7 @@ import {
 import { A } from '@ember/array';
 import { getOwner } from '@ember/application';
 import HasManyChange from 'ember-simple-changeset/utils/has-many-change';
+import { resolve } from 'rsvp';
 
 function extractContent(obj) {
   if (!obj || !obj.content) {
@@ -79,6 +80,14 @@ export default class Changeset {
   rollbackAttributes() {
     set(this, '_changes', {});
     this._resetHasManyRelations();
+  }
+
+  save() {
+    if (!this.isDirty) {
+      return resolve();
+    }
+
+    return this._model.save();
   }
 
   _setupAttrs() {
