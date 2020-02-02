@@ -27,6 +27,7 @@ module.exports = {
     'space-before-function-paren': ['error', 'never'],
     'import/no-unresolved': 'off',
     'import/extensions': 'off',
+    'comma-dangle': ['error', 'always-multiline'],
     'no-underscore-dangle': ['error', {
       allowAfterThis: true,
       allowAfterSuper: true,

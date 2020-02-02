@@ -1,13 +1,23 @@
-import { get, set } from '@ember/object';
+import {
+  computed,
+  defineProperty,
+  get,
+  set,
+} from '@ember/object';
 import { A } from '@ember/array';
 import { getOwner } from '@ember/application';
 import HasManyChange from 'ember-simple-changeset/utils/has-many-change';
 
-// function hasManysAreEqual(array1, array2) {
-//   return (array1.length === array2.length) && array1.every((item, index) => (
-//     item === array2.objectAt ? array2.objectAt(index) : array2[index]
-//   ));
-// }
+function extractContent(obj) {
+  if (!obj || !obj.content) {
+    return obj;
+  }
+  return obj.content;
+}
+
+function belongsTosDiffer(obj1, obj2) {
+  return extractContent(obj1) !== extractContent(obj2);
+}
 
 export default class Changeset {
   _changes = {}
@@ -17,8 +27,9 @@ export default class Changeset {
   constructor(model) {
     this._model = model;
 
-    model.eachAttribute((key, { type }) => this.modelAttributes.pushObject({ key, type }));
-    model.eachRelationship((key, { kind }) => this.modelRelationships.pushObject({ key, kind }));
+    this._setupAttrs();
+    this._setupRelationships();
+    this._setupIsDirty();
     this._resetHasManyRelations();
   }
 
@@ -66,8 +77,65 @@ export default class Changeset {
   }
 
   rollbackAttributes() {
-    this._changes = {};
+    set(this, '_changes', {});
     this._resetHasManyRelations();
+  }
+
+  _setupAttrs() {
+    this._model.eachAttribute((key, { type }) => this.modelAttributes.pushObject({ key, type }));
+  }
+
+  _setupRelationships() {
+    this._model.eachRelationship(
+      (key, { kind }) => this.modelRelationships.pushObject({ key, kind })
+    );
+  }
+
+  _setupIsDirty() {
+    const attrs = this.modelAttributes;
+    const rels = this.modelRelationships;
+    const dependentKeys = [
+      ...attrs.mapBy('key'),
+      ...A(rels.rejectBy('kind', 'hasMany')).mapBy('key'),
+      ...rels.filterBy('kind', 'hasMany').map(({ key }) => `${key}.[]`),
+    ];
+    const changesetKeys = `_changes.{${dependentKeys.join(',')}}`;
+
+    defineProperty(this, 'isDirty', computed(changesetKeys, function() {
+      const changes = Object.entries(this._changes);
+
+      let dirty = false;
+
+      for (let i = 0, x = changes.length; i < x; i += 1) {
+        const [key, change] = changes[i];
+
+        dirty = this._isDirtyChange(key, change);
+
+        if (dirty) {
+          continue; // eslint-disable-line no-continue
+        }
+      }
+
+      return dirty;
+    }));
+  }
+
+  _isDirtyChange(key, change) {
+    const original = this._model.get(key);
+
+    if (this._findAttr(key)) {
+      return change !== original;
+    }
+
+    if (this._findRelationship(key, 'belongsTo')) {
+      return belongsTosDiffer(change, original);
+    }
+
+    const isSameLength = change.length === original.length;
+
+    return !isSameLength || change.content.any(
+      (item, index) => item !== original.objectAt(index)
+    );
   }
 
   _resetHasManyRelations() {
@@ -98,7 +166,7 @@ export default class Changeset {
     return descriptor && descriptor[type];
   }
 
-  _transformRelation(relation, value) { // eslint-disable-line class-methods-use-this
+  _transformRelation(relation, value) {
     const isHasMany = relation.kind && relation.kind === 'hasMany';
     const transformType = relation.type;
 

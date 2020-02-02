@@ -34,103 +34,108 @@ module('Unit | Utility | changeset', (hooks) => {
 
   hooks.beforeEach(function() {
     this.owner.register('model:test', TestModel);
-
     this.store = this.owner.lookup('service:store');
-    this.model = this.store.createRecord('test', {
-      firstName: 'Jonathan',
-      lastName: 'Palmer',
-    });
-    this.changeset = new Changeset(this.model);
   });
 
-  test('it serializes attributes and applies appropriate changes on model', function(assert) {
-    assert.expect(12);
-
-    const expected = {
-      firstName: 'Lilian',
-      notAProperty: undefined,
-      children: 2,
-      notes: '123',
-      isMath: true,
-    };
-
-    const assertProps = (obj) => {
-      ['firstName', 'notAProperty', 'children', 'notes', 'isMath'].forEach((prop) => {
-        assert.equal(obj.get(prop), expected[prop], `${prop} equals ${expected[prop]}`);
+  module('basic tests', (basicHooks) => {
+    basicHooks.beforeEach(function() {
+      this.model = this.store.createRecord('test', {
+        firstName: 'Jonathan',
+        lastName: 'Palmer',
       });
-    };
-
-    this.changeset.setProperties({
-      firstName: expected.firstName,
-      notAProperty: 'someValue',
-      children: '2',
-      notes: 123,
-      isMath: 'not boolean',
+      this.changeset = new Changeset(this.model);
     });
 
-    assertProps(this.changeset);
-    assert.equal(this.model.firstName, 'Jonathan', 'model attr is unchanged before application');
+    test('it serializes attributes and applies appropriate changes on model', function(assert) {
+      assert.expect(12);
 
-    this.changeset.applyChanges();
+      const expected = {
+        firstName: 'Lilian',
+        notAProperty: undefined,
+        children: 2,
+        notes: '123',
+        isMath: true,
+      };
 
-    assert.equal(this.changeset.get('firstName'), 'Lilian');
-    assertProps(this.model);
-  });
+      const assertProps = (obj) => {
+        ['firstName', 'notAProperty', 'children', 'notes', 'isMath'].forEach((prop) => {
+          assert.equal(obj.get(prop), expected[prop], `${prop} equals ${expected[prop]}`);
+        });
+      };
 
-  test('it handles nested accessors', function(assert) {
-    assert.expect(2);
+      this.changeset.setProperties({
+        firstName: expected.firstName,
+        notAProperty: 'someValue',
+        children: '2',
+        notes: 123,
+        isMath: 'not boolean',
+      });
 
-    const model = this.store.createRecord('test', {
-      follows: this.store.createRecord('test', { firstName: 'Trevor' }),
+      assertProps(this.changeset);
+      assert.equal(this.model.firstName, 'Jonathan', 'model attr is unchanged before application');
+
+      this.changeset.applyChanges();
+
+      assert.equal(this.changeset.get('firstName'), 'Lilian');
+      assertProps(this.model);
     });
-    const changeset = new Changeset(model);
 
-    assert.equal(changeset.get('follows.firstName'), 'Trevor');
+    test('it handles nested accessors', function(assert) {
+      assert.expect(2);
 
-    changeset.set('follows', this.store.createRecord('test', { firstName: 'Paul' }));
+      const model = this.store.createRecord('test', {
+        follows: this.store.createRecord('test', { firstName: 'Trevor' }),
+      });
+      const changeset = new Changeset(model);
 
-    assert.equal(changeset.get('follows.firstName'), 'Paul');
+      assert.equal(changeset.get('follows.firstName'), 'Trevor');
+
+      changeset.set('follows', this.store.createRecord('test', { firstName: 'Paul' }));
+
+      assert.equal(changeset.get('follows.firstName'), 'Paul');
+    });
+
+    test('it reverts changes', function(assert) {
+      assert.expect(1);
+
+      this.changeset.set('firstName', 'Lilian');
+      this.changeset.rollbackAttributes();
+
+      assert.equal(this.changeset.get('firstName'), 'Jonathan');
+    });
+
+    test('it handles computed properties', function(assert) {
+      assert.expect(6);
+
+      this.changeset.set('fullName', 'Lilian Baxter');
+
+      assert.equal(this.changeset.get('firstName'), 'Lilian');
+      assert.equal(this.changeset.get('lastName'), 'Baxter');
+
+      this.changeset.set('firstName', 'Flora');
+      assert.equal(this.changeset.get('fullName'), 'Flora Baxter');
+      assert.equal(this.model.fullName, 'Jonathan Palmer');
+
+      this.changeset.applyChanges();
+      assert.equal(this.changeset.get('fullName'), 'Flora Baxter');
+      assert.equal(this.model.fullName, 'Flora Baxter');
+    });
+
+    test('it handles belongsTo relationships', function(assert) {
+      assert.expect(4);
+
+      const follows = this.store.createRecord('test');
+
+      this.changeset.set('follows', follows);
+      assert.equal(this.changeset.get('follows'), follows);
+      assert.notOk(this.model.follows.content);
+
+      this.changeset.applyChanges();
+      assert.equal(this.changeset.get('follows'), follows);
+      assert.equal(this.model.follows.content, follows);
+    });
   });
 
-  test('it reverts changes', function(assert) {
-    assert.expect(1);
-
-    this.changeset.set('firstName', 'Lilian');
-    this.changeset.rollbackAttributes();
-
-    assert.equal(this.changeset.get('firstName'), 'Jonathan');
-  });
-
-  test('it handles computed properties', function(assert) {
-    assert.expect(6);
-
-    this.changeset.set('fullName', 'Lilian Baxter');
-
-    assert.equal(this.changeset.get('firstName'), 'Lilian');
-    assert.equal(this.changeset.get('lastName'), 'Baxter');
-
-    this.changeset.set('firstName', 'Flora');
-    assert.equal(this.changeset.get('fullName'), 'Flora Baxter');
-    assert.equal(this.model.fullName, 'Jonathan Palmer');
-
-    this.changeset.applyChanges();
-    assert.equal(this.changeset.get('fullName'), 'Flora Baxter');
-    assert.equal(this.model.fullName, 'Flora Baxter');
-  });
-
-  test('it handles belongsTo relationships', function(assert) {
-    assert.expect(4);
-
-    const follows = this.store.createRecord('test');
-
-    this.changeset.set('follows', follows);
-    assert.equal(this.changeset.get('follows'), follows);
-    assert.notOk(this.model.follows.content);
-
-    this.changeset.applyChanges();
-    assert.equal(this.changeset.get('follows'), follows);
-    assert.equal(this.model.follows.content, follows);
-  });
 
   module('hasMany', (hasManyHooks) => {
     hasManyHooks.beforeEach(function() {
@@ -189,6 +194,45 @@ module('Unit | Utility | changeset', (hooks) => {
       this.changeset.set('followers', follower);
 
       assert.deepEqual(this.getFollowers(), [follower]);
+    });
+  });
+
+  module('isDirty', () => {
+    test('it returns appropriate value for any type of change', function(assert) {
+      assert.expect(9);
+
+      const follows = this.store.createRecord('test');
+      const followers = A(new Array(3).fill().map((_v, index) => this.store.createRecord('test', { id: Number(index) + 1 })));
+
+      const model = this.store.createRecord('test', {
+        firstName: 'Jonathan',
+        lastName: 'Palmer',
+        follows,
+        followers,
+      });
+      const changeset = new Changeset(model);
+
+      assert.equal(changeset.isDirty, false);
+
+      changeset.set('firstName', 'Lilian');
+      assert.equal(changeset.isDirty, true);
+      changeset.set('firstName', 'Jonathan');
+      assert.equal(changeset.isDirty, false);
+      changeset.set('fullName', 'Lilian Portero');
+      assert.equal(changeset.isDirty, true, 'attrs and computed properties are ok');
+
+      changeset.rollbackAttributes();
+      assert.equal(changeset.isDirty, false);
+
+      changeset.get('followers').removeObject(followers.lastObject);
+      assert.equal(changeset.isDirty, true);
+      changeset.get('followers').pushObject(followers.lastObject);
+      assert.equal(changeset.isDirty, false, 'hasMany relationships are ok');
+
+      changeset.set('follows', null);
+      assert.equal(changeset.isDirty, true);
+      changeset.set('follows', follows);
+      assert.equal(changeset.isDirty, false, 'belongsTo relationships are ok');
     });
   });
 });
