@@ -77,6 +77,21 @@ module('Unit | Utility | changeset', (hooks) => {
     assertProps(this.model);
   });
 
+  test('it handles nested accessors', function(assert) {
+    assert.expect(2);
+
+    const model = this.store.createRecord('test', {
+      follows: this.store.createRecord('test', { firstName: 'Trevor' }),
+    });
+    const changeset = new Changeset(model);
+
+    assert.equal(changeset.get('follows.firstName'), 'Trevor');
+
+    changeset.set('follows', this.store.createRecord('test', { firstName: 'Paul' }));
+
+    assert.equal(changeset.get('follows.firstName'), 'Paul');
+  });
+
   test('it reverts changes', function(assert) {
     assert.expect(1);
 

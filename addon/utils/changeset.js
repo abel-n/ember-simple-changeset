@@ -1,4 +1,4 @@
-import { set } from '@ember/object';
+import { get, set } from '@ember/object';
 import { A } from '@ember/array';
 import { getOwner } from '@ember/application';
 import HasManyChange from 'ember-simple-changeset/utils/has-many-change';
@@ -31,7 +31,7 @@ export default class Changeset {
       }
     }
 
-    return this._changes[key] || this._model.get(key);
+    return get(this._changes, key) || get(this._model, key);
   }
 
   set(key, value) {
