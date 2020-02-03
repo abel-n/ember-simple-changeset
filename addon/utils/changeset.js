@@ -110,6 +110,8 @@ export default class Changeset extends ObjectProxy {
       return resolve();
     }
 
+    this.applyChanges();
+
     return this._model.save();
   }
 

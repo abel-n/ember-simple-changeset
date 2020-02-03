@@ -137,7 +137,7 @@ module('Unit | Utility | changeset', (hooks) => {
     });
 
     test('it calls model.save if not dirty', async function(assert) {
-      assert.expect(2);
+      assert.expect(3);
 
       const save = sinon.stub(this.model, 'save');
 
@@ -145,8 +145,10 @@ module('Unit | Utility | changeset', (hooks) => {
       assert.ok(save.notCalled);
 
       this.changeset.set('firstName', 'Po');
+
       await this.changeset.save();
       assert.ok(save.calledOnce);
+      assert.equal(this.model.firstName, 'Po');
     });
   });
 
