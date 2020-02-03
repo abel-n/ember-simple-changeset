@@ -20,6 +20,10 @@ function belongsTosDiffer(obj1, obj2) {
   return extractContent(obj1) !== extractContent(obj2);
 }
 
+function getPathRoot(path) {
+  return path.split('.')[0].replace(/\.\[\]$/, '');
+}
+
 export default class Changeset {
   _changes = {}
   modelAttributes = A()
@@ -35,7 +39,8 @@ export default class Changeset {
   }
 
   get(key) {
-    if (!this._findRelation(key)) {
+    const rootKey = getPathRoot(key);
+    if (!this._findRelation(rootKey)) {
       const getter = this._getAccessorFor(key, 'get');
 
       if (getter) {
@@ -43,7 +48,13 @@ export default class Changeset {
       }
     }
 
-    return get(this._changes, key) || get(this._model, key);
+    const change = get(this._changes, key);
+
+    if (Object.prototype.hasOwnProperty.call(this._changes, rootKey)) {
+      return change;
+    }
+
+    return get(this._model, key);
   }
 
   set(key, value) {
