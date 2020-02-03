@@ -23,6 +23,7 @@ module.exports = {
   },
   rules: {
     'ember/no-jquery': 'error',
+    'no-continue': 'off',
     'func-names': ['error', 'never'],
     'space-before-function-paren': ['error', 'never'],
     'import/no-unresolved': 'off',

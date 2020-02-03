@@ -121,7 +121,7 @@ export default class Changeset {
         dirty = this._isDirtyChange(key, change);
 
         if (dirty) {
-          continue; // eslint-disable-line no-continue
+          continue;
         }
       }
 
