@@ -6,6 +6,7 @@ import {
 } from '@ember/object';
 import { A } from '@ember/array';
 import { getOwner } from '@ember/application';
+import ObjectProxy from '@ember/object/proxy';
 import HasManyChange from 'ember-simple-changeset/utils/has-many-change';
 import { resolve } from 'rsvp';
 
@@ -24,18 +25,29 @@ function getPathRoot(path) {
   return path.split('.')[0].replace(/\.\[\]$/, '');
 }
 
-export default class Changeset {
+export default class Changeset extends ObjectProxy {
   _changes = {}
   modelAttributes = A()
   modelRelationships = A()
 
-  constructor(model) {
-    this._model = model;
+  init() {
+    super.init();
 
     this._setupAttrs();
     this._setupRelationships();
     this._setupIsDirty();
     this._resetHasManyRelations();
+  }
+
+  unknownProperty(...args) {
+    return this.get(...args);
+  }
+
+  setUnknownProperty(...args) {
+    if (args[0] === '_model') {
+      return super.setUnknownProperty(...args);
+    }
+    return this.set(...args);
   }
 
   get(key) {

@@ -44,7 +44,7 @@ module('Unit | Utility | changeset', (hooks) => {
         firstName: 'Jonathan',
         lastName: 'Palmer',
       });
-      this.changeset = new Changeset(this.model);
+      this.changeset = Changeset.create({ _model: this.model });
     });
 
     test('it serializes attributes and applies appropriate changes on model', function(assert) {
@@ -87,7 +87,7 @@ module('Unit | Utility | changeset', (hooks) => {
       const model = this.store.createRecord('test', {
         follows: this.store.createRecord('test', { firstName: 'Trevor' }),
       });
-      const changeset = new Changeset(model);
+      const changeset = Changeset.create({ _model: model });
 
       assert.equal(changeset.get('follows.firstName'), 'Trevor');
 
@@ -158,7 +158,7 @@ module('Unit | Utility | changeset', (hooks) => {
         lastName: 'Palmer',
         followers: this.followers,
       });
-      this.changeset = new Changeset(this.model);
+      this.changeset = Changeset.create({ _model: this.model });
       this.getFollowers = () => this.changeset.get('followers');
     });
 
@@ -223,7 +223,7 @@ module('Unit | Utility | changeset', (hooks) => {
         follows,
         followers,
       });
-      const changeset = new Changeset(model);
+      const changeset = Changeset.create({ _model: model });
 
       assert.equal(changeset.isDirty, false);
 
